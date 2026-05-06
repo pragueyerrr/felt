@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>felt</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{min-height:100vh;background:#1a0a2e}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.app{background:#1a0a2e;min-height:100vh;padding:2.5rem 2rem 3rem;font-family:'DM Mono',monospace;position:relative;overflow:hidden;max-width:860px;margin:0 auto;}
+.stars{position:fixed;inset:0;pointer-events:none;z-index:0}
+.content{position:relative;z-index:1}
+.eyebrow{font-size:10px;letter-spacing:0.2em;color:#c2703a;text-transform:uppercase;margin-bottom:1.2rem}
+.title{font-family:'DM Serif Display',serif;font-size:32px;font-weight:400;color:#f0e6d3;line-height:1.3;margin-bottom:2rem}
+.title em{font-style:italic;color:#e8956d}
+.drop-zone{border:1px solid rgba(180,100,220,0.25);border-radius:10px;padding:2rem 1.5rem;text-align:center;cursor:pointer;background:rgba(255,255,255,0.02);transition:border-color 0.2s,background 0.2s;}
+.drop-zone:hover,.drop-zone.drag-over{border-color:rgba(180,100,220,0.5);background:rgba(180,100,220,0.05)}
+.drop-zone p{font-size:11px;color:#5a3a6a;letter-spacing:0.05em;margin-top:6px}
+.browse{color:#b464dc;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.player{display:none;margin-top:2rem}
+.now-playing{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.np-dot{width:6px;height:6px;border-radius:50%;background:#e8956d;animation:pulse 2s infinite;flex-shrink:0}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+.np-name{font-size:10px;letter-spacing:0.1em;color:#7a5a3a;text-transform:uppercase;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.waveform-wrap{position:relative;height:80px;border-radius:8px;overflow:hidden;cursor:crosshair;background:rgba(255,255,255,0.02);border:1px solid rgba(180,100,220,0.15);}
+canvas#wv{position:absolute;top:0;left:0;width:100%;height:100%}
+.prog{position:absolute;top:0;bottom:0;width:1px;background:rgba(240,230,211,0.45);pointer-events:none;left:0}
+.pin-mk{position:absolute;top:0;bottom:0;width:1px;background:rgba(232,149,109,0.5);cursor:pointer;z-index:2}
+.pin-mk .dot{position:absolute;top:6px;width:9px;height:9px;border-radius:50%;background:#e8956d;left:-4px;border:1.5px solid #1a0a2e}
+.controls{display:flex;align-items:center;gap:8px;margin-top:12px;flex-wrap:wrap}
+.btn-play{width:44px;height:44px;border-radius:50%;flex-shrink:0;border:1px solid rgba(180,100,220,0.35);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:border-color 0.15s,background 0.15s;-webkit-tap-highlight-color:transparent;}
+.btn-play:hover,.btn-play:active{border-color:#b464dc;background:rgba(180,100,220,0.1)}
+.btn-play svg{width:16px;height:16px;fill:#c8a8e0;display:block}
+.btn-pin{display:flex;align-items:center;justify-content:center;gap:6px;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.05em;padding:0 16px;height:44px;border-radius:5px;flex:1;border:1px solid rgba(232,149,109,0.35);background:transparent;color:#e8956d;cursor:pointer;transition:border-color 0.15s,background 0.15s;-webkit-tap-highlight-color:transparent;}
+.btn-pin:active{background:rgba(232,149,109,0.12)}
+.btn-pin svg{width:14px;height:14px;stroke:#e8956d;fill:none;stroke-width:1.8;flex-shrink:0}
+.time-display{font-size:11px;color:#3a1a4a;font-variant-numeric:tabular-nums;letter-spacing:0.04em;margin-left:auto}
+.divider{height:1px;background:rgba(180,100,220,0.1);margin:2rem 0}
+.ann-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:8px}
+.ann-header h3{font-family:'DM Serif Display',serif;font-size:16px;font-weight:400;font-style:italic;color:#c8a8e0}
+.btn-sm{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.06em;padding:0 12px;height:30px;border-radius:4px;white-space:nowrap;border:1px solid rgba(180,100,220,0.2);background:transparent;color:#6a4a7a;cursor:pointer;transition:border-color 0.15s,color 0.15s;display:flex;align-items:center;gap:5px;}
+.btn-sm:hover{border-color:#b464dc;color:#c8a8e0}
+.btn-sm svg{width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:1.8}
+.ann-card{border:1px solid rgba(180,100,220,0.12);border-radius:8px;padding:12px 14px;margin-bottom:8px;background:rgba(255,255,255,0.02);display:flex;gap:12px;align-items:flex-start;cursor:pointer;transition:border-color 0.15s,background 0.15s;-webkit-tap-highlight-color:transparent;}
+.ann-card:active{background:rgba(180,100,220,0.06)}
+.ann-card.active{border-color:rgba(232,149,109,0.45);background:rgba(232,149,109,0.05)}
+.ann-time{font-size:11px;color:#e8956d;white-space:nowrap;flex-shrink:0;margin-top:2px;letter-spacing:0.06em}
+.ann-text{font-size:13px;color:#9a7aaa;flex:1;line-height:1.65;word-break:break-word}
+.ann-text.empty{color:#4a2a5a;font-style:italic}
+.del-btn{font-size:18px;color:#2a1a3a;background:none;border:none;cursor:pointer;padding:4px;line-height:1;flex-shrink:0;transition:color 0.15s;margin-top:-2px}
+.del-btn:hover{color:#c2703a}
+.input-card{border:1px solid rgba(232,149,109,0.25);border-radius:8px;padding:16px;background:rgba(232,149,109,0.04);margin-top:12px;display:none;}
+.input-label{font-size:10px;letter-spacing:0.12em;color:#c2703a;margin-bottom:10px;text-transform:uppercase}
+.input-card textarea{width:100%;font-size:14px;font-family:'DM Mono',monospace;border:1px solid rgba(232,149,109,0.2);border-radius:5px;padding:11px 13px;background:rgba(255,255,255,0.03);color:#f0e6d3;resize:none;height:80px;line-height:1.65;-webkit-appearance:none;}
+.input-card textarea::placeholder{color:#3a1a2a}
+.input-card textarea:focus{outline:none;border-color:rgba(232,149,109,0.5)}
+.input-row{display:flex;gap:8px;margin-top:10px}
+.btn-save{font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.1em;padding:0 20px;height:40px;border-radius:4px;flex:1;background:#c2703a;color:#1a0a2e;border:none;cursor:pointer;transition:background 0.15s;text-transform:uppercase;}
+.btn-save:active{background:#e8956d}
+.btn-cancel{font-family:'DM Mono',monospace;font-size:11px;padding:0 16px;height:40px;border-radius:4px;background:transparent;border:1px solid rgba(180,100,220,0.2);color:#6a4a7a;cursor:pointer;transition:border-color 0.15s;}
+.btn-cancel:active{border-color:#b464dc}
+.json-drop{border:1px dashed rgba(232,149,109,0.25);border-radius:8px;padding:1rem;text-align:center;cursor:pointer;background:rgba(232,149,109,0.02);transition:border-color 0.2s,background 0.2s;margin-bottom:12px;}
+.json-drop:hover,.json-drop.drag-over{border-color:rgba(232,149,109,0.5);background:rgba(232,149,109,0.06)}
+.json-drop.loaded{border-color:rgba(232,149,109,0.4);border-style:solid}
+.json-drop-text{font-size:11px;color:#7a4a3a;letter-spacing:0.06em;font-style:italic}
+.empty-state{padding:2rem;text-align:center;color:#3a1a4a;font-size:12px;line-height:1.9;font-style:italic}
+@media(max-width:480px){.app{padding:1.5rem 1.2rem 2.5rem}.title{font-size:26px}}
+</style>
+</head>
+<body>
+<h1 class="sr-only">listen & annotate</h1>
+<input type="file" id="fi" accept="audio/*" style="display:none">
+<input type="file" id="ji" accept=".json" style="display:none">
+<canvas class="stars" id="sc"></canvas>
+<div class="app">
+  <div class="content">
+    <p class="eyebrow">a listening instrument</p>
+    <h2 class="title">felt.<br><em>mark what moves you.</em></h2>
+    <p style="font-size:12px;color:#7a5a6a;line-height:1.9;margin-bottom:2rem">
+      drop an audio file. pin your thoughts to moments as you listen.<br>
+      export and send — or bake everything into one file for them to open.
+    </p>
+    <div class="drop-zone" id="dz">
+      <h3 style="font-family:'DM Serif Display',serif;font-size:18px;font-weight:400;color:#c8a8e0">drop audio here</h3>
+      <p>or <span class="browse" id="bl">browse to upload</span> &nbsp;·&nbsp; mp3, wav, m4a, ogg</p>
+    </div>
+    <div class="player" id="player">
+      <div class="now-playing" style="margin-top:2rem">
+        <div class="np-dot"></div>
+        <span class="np-name" id="fname"></span>
+      </div>
+      <div class="waveform-wrap" id="ww">
+        <canvas id="wv"></canvas>
+        <div class="prog" id="pl"></div>
+        <div class="hover-ln" id="hl" style="position:absolute;top:0;bottom:0;width:1px;background:rgba(180,100,220,0.25);pointer-events:none;display:none"></div>
+        <div id="pc"></div>
+      </div>
+      <div class="controls">
+        <button class="btn-play" id="pb" aria-label="Play/pause">
+          <svg id="play-icon" viewBox="0 0 24 24"><polygon points="5,3 19,12 5,21"/></svg>
+        </button>
+        <button class="btn-pin" id="ab">
+          <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
+          pin this moment
+        </button>
+        <span class="time-display" id="td">0:00 / 0:00</span>
+      </div>
+      <div class="divider"></div>
+      <div class="ann-header">
+        <h3 id="atitle">your annotations</h3>
+        <button class="btn-sm" id="eb">
+          <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+          export json
+        </button>
+      </div>
+      <div class="json-drop" id="jdz">
+        <p class="json-drop-text" id="jdz-text">or drop a json file here to load someone else's annotations</p>
+      </div>
+      <div id="al"></div>
+      <div class="input-card" id="ic">
+        <div class="input-label">pinning moment at <span id="ptl" style="color:#e8956d"></span></div>
+        <textarea id="ni" placeholder="what are you feeling here..."></textarea>
+        <div class="input-row">
+          <button class="btn-save" id="sv">save</button>
+          <button class="btn-cancel" id="cn">cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const AUDIO_SRC = null;
+const BAKED_ANNOTATIONS = null;
+
+(function(){
+  const sc=document.getElementById('sc');
+  const cx=sc.getContext('2d');
+  sc.width=window.innerWidth;sc.height=window.innerHeight;
+  for(let i=0;i<180;i++){
+    const x=Math.random()*sc.width,y=Math.random()*sc.height,r=Math.random()*1.2;
+    const warm=Math.random()>0.55,a=Math.random()*0.5+0.07;
+    cx.beginPath();cx.arc(x,y,r,0,Math.PI*2);
+    cx.fillStyle=warm?`rgba(220,160,120,${a})`:`rgba(180,140,220,${a})`;
+    cx.fill();
+  }
+})();
+
+let audio=null,anns=[],pending=null,wdata=null,raf=null;
+const $=id=>document.getElementById(id);
+const dz=$('dz'),fi=$('fi'),ji=$('ji'),player=$('player'),fname=$('fname');
+const ww=$('ww'),canvas=$('wv'),pl=$('pl'),hl=$('hl'),pc=$('pc');
+const pb=$('pb'),playIcon=$('play-icon'),ab=$('ab'),td=$('td'),al=$('al'),ic=$('ic');
+const ni=$('ni'),ptl=$('ptl'),atitle=$('atitle');
+const playPath='<polygon points="5,3 19,12 5,21"/>';
+const pausePath='<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>';
+
+if(AUDIO_SRC){
+  audio=new Audio(AUDIO_SRC);
+  if(BAKED_ANNOTATIONS) anns=BAKED_ANNOTATIONS.annotations.map((a,i)=>({...a,id:i}));
+  dz.style.display='none';
+  player.style.display='block';
+  fname.textContent='your riff :)';
+  audio.onloadedmetadata=()=>{updateProgress();renderAnns();renderPins();drawWaveform(null,AUDIO_SRC)};
+  audio.ontimeupdate=updateProgress;
+  audio.onended=()=>{playIcon.innerHTML=playPath;cancelAnimationFrame(raf)};
+}
+
+$('bl').onclick=e=>{e.stopPropagation();fi.click()};
+dz.onclick=()=>fi.click();
+fi.onchange=e=>loadAudio(e.target.files[0]);
+ji.onchange=e=>loadJSON(e.target.files[0]);
+$('eb').onclick=exportJSON;
+$('sv').onclick=saveNote;
+$('cn').onclick=cancelPin;
+pb.onclick=togglePlay;
+ab.onclick=dropPin;
+
+const jdz=$('jdz');
+jdz.onclick=()=>ji.click();
+jdz.ondragover=e=>{e.preventDefault();jdz.classList.add('drag-over')};
+jdz.ondragleave=()=>jdz.classList.remove('drag-over');
+jdz.ondrop=e=>{e.preventDefault();jdz.classList.remove('drag-over');if(e.dataTransfer.files[0])loadJSON(e.dataTransfer.files[0])};
+
+dz.ondragover=e=>{e.preventDefault();dz.classList.add('drag-over')};
+dz.ondragleave=()=>dz.classList.remove('drag-over');
+dz.ondrop=e=>{e.preventDefault();dz.classList.remove('drag-over');if(e.dataTransfer.files[0])loadAudio(e.dataTransfer.files[0])};
+
+ww.addEventListener('click',e=>{if(!audio)return;const r=ww.getBoundingClientRect();audio.currentTime=((e.clientX-r.left)/r.width)*audio.duration;updateProgress()});
+ww.onmousemove=e=>{const r=ww.getBoundingClientRect();hl.style.left=(((e.clientX-r.left)/r.width)*100)+'%';hl.style.display='block'};
+ww.onmouseleave=()=>hl.style.display='none';
+
+function fmt(s){if(!s||isNaN(s))return'0:00';return Math.floor(s/60)+':'+String(Math.floor(s%60)).padStart(2,'0')}
+
+function loadAudio(file){
+  if(!file)return;
+  audio=new Audio(URL.createObjectURL(file));
+  fname.textContent=file.name;
+  audio.onloadedmetadata=()=>{player.style.display='block';drawWaveform(file,null);updateProgress();renderAnns()};
+  audio.ontimeupdate=updateProgress;
+  audio.onended=()=>{playIcon.innerHTML=playPath;cancelAnimationFrame(raf)};
+}
+
+function drawWaveform(file,src){
+  const ctx=new (window.AudioContext||window.webkitAudioContext)();
+  if(file){
+    const reader=new FileReader();
+    reader.onload=e=>ctx.decodeAudioData(e.target.result,buf=>buildWavedata(buf));
+    reader.readAsArrayBuffer(file);
+  } else if(src){
+    const req=new XMLHttpRequest();
+    req.open('GET',src,true);req.responseType='arraybuffer';
+    req.onload=()=>ctx.decodeAudioData(req.response,buf=>buildWavedata(buf));
+    req.send();
+  }
+}
+
+function buildWavedata(buf){
+  const d=buf.getChannelData(0),step=Math.ceil(d.length/600);
+  wdata=[];
+  for(let i=0;i<600;i++){let mx=0;for(let j=0;j<step;j++){const v=Math.abs(d[i*step+j]||0);if(v>mx)mx=v;}wdata.push(mx);}
+  paintWaveform();
+}
+
+function paintWaveform(){
+  if(!wdata)return;
+  const dpr=window.devicePixelRatio||1,w=ww.clientWidth,h=ww.clientHeight;
+  canvas.width=w*dpr;canvas.height=h*dpr;
+  canvas.style.width=w+'px';canvas.style.height=h+'px';
+  const ctx=canvas.getContext('2d');ctx.scale(dpr,dpr);
+  const bw=w/wdata.length;
+  wdata.forEach((val,i)=>{
+    const bh=Math.max(1.5,val*h*0.82),x=i*bw,y=(h-bh)/2;
+    const t=i/wdata.length;
+    const rv=Math.round(180+t*52),gv=Math.round(100+t*49),bv=Math.round(220-t*111);
+    ctx.fillStyle=`rgba(${rv},${gv},${bv},${0.12+val*0.6})`;
+    ctx.fillRect(x,y,Math.max(1,bw-0.8),bh);
+  });
+}
+
+function updateProgress(){
+  if(!audio||!audio.duration)return;
+  const ratio=audio.currentTime/audio.duration;
+  pl.style.left=(ratio*100)+'%';
+  td.textContent=fmt(audio.currentTime)+' / '+fmt(audio.duration);
+  anns.forEach(a=>{const c=document.getElementById('c'+a.id);if(c)c.classList.toggle('active',Math.abs(a.time-audio.currentTime)<0.5)});
+}
+
+function togglePlay(){
+  if(!audio)return;
+  if(audio.paused){audio.play();playIcon.innerHTML=pausePath;(function tick(){updateProgress();raf=requestAnimationFrame(tick)})()}
+  else{audio.pause();playIcon.innerHTML=playPath;cancelAnimationFrame(raf)}
+}
+
+function dropPin(){
+  if(!audio)return;
+  pending={time:audio.currentTime,id:Date.now()};
+  ptl.textContent=fmt(pending.time);
+  ic.style.display='block';ni.value='';
+  setTimeout(()=>ni.focus(),50);
+}
+
+function saveNote(){
+  if(!pending)return;
+  anns.push({id:pending.id,time:pending.time,text:ni.value.trim()});
+  anns.sort((a,b)=>a.time-b.time);
+  pending=null;ic.style.display='none';renderAnns();renderPins();
+}
+
+function cancelPin(){pending=null;ic.style.display='none'}
+function deleteAnn(id){anns=anns.filter(a=>a.id!==id);renderAnns();renderPins()}
+function seekTo(t){if(!audio)return;audio.currentTime=t;updateProgress()}
+
+function renderAnns(){
+  atitle.textContent=anns.length?`your annotations (${anns.length})`:'your annotations';
+  if(!anns.length){al.innerHTML='<div class="empty-state">no pins yet — press pin this moment while listening.</div>';return}
+  al.innerHTML='';
+  anns.forEach(a=>{
+    const card=document.createElement('div');
+    card.className='ann-card';card.id='c'+a.id;card.onclick=()=>seekTo(a.time);
+    card.innerHTML=`<span class="ann-time">${fmt(a.time)}</span><span class="ann-text${a.text?'':' empty'}">${a.text||'no note'}</span><button class="del-btn" aria-label="Delete">×</button>`;
+    card.querySelector('.del-btn').onclick=e=>{e.stopPropagation();deleteAnn(a.id)};
+    al.appendChild(card);
+  });
+}
+
+function renderPins(){
+  pc.innerHTML='';
+  if(!audio||!audio.duration)return;
+  anns.forEach(a=>{
+    const pin=document.createElement('div');pin.className='pin-mk';
+    pin.style.left=((a.time/audio.duration)*100)+'%';
+    pin.innerHTML='<div class="dot"></div>';
+    pin.onclick=e=>{e.stopPropagation();seekTo(a.time)};
+    pc.appendChild(pin);
+  });
+}
+
+function exportJSON(){
+  const blob=new Blob([JSON.stringify({annotations:anns.map(a=>({time:a.time,text:a.text}))},null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='annotations.json';a.click();
+}
+
+function loadJSON(file){
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const data=JSON.parse(e.target.result);
+      if(data.annotations){
+        anns=data.annotations.map((a,i)=>({...a,id:Date.now()+i}));
+        renderAnns();renderPins();
+        jdz.classList.add('loaded');
+        $('jdz-text').textContent='✓ '+file.name;
+      }
+    }catch{alert('could not read that json file.')}
+  };
+  reader.readAsText(file);
+}
+
+window.addEventListener('keydown',e=>{
+  if(document.activeElement.tagName==='TEXTAREA')return;
+  if(e.code==='Space'){e.preventDefault();togglePlay()}
+  if(e.code==='KeyP'){e.preventDefault();dropPin()}
+});
+</script>
+</body>
+</html>
